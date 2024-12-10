@@ -1,34 +1,123 @@
-// Seleciona o elemento único do acordeão
-var acc = document.querySelector(".accordion");
+export class Accordion extends DisableableMixin(Component) {
+    /**
+     * Define o nome da tag do componente Accordion: `<ds-accordion>`.
+     */
+    static get componentName() {
+        return 'accordion';
+    }
 
-// Adiciona um evento de clique ao botão
-acc.addEventListener("click", function () {
-  // Alterna a classe 'active' no botão
-  this.classList.toggle("active");
+    /**
+     * Define as propriedades do componente. Accordion por unidade.
+     */
+    static get props() {
+        return [
+            ...super.props,
+            new PropString('icon'),
+            new PropString('titulo'),
+            new PropString('texto'),
+        ];
+    }
 
-  // Seleciona o painel associado ao botão
-  var panel = this.nextElementSibling;
+    /**
+     * Define os estilos CSS do componente único Accordion.
+     */
+    static get styles() {
+        return /*css*/`
+            :host {
+                --bullet-background: transparent;
+                --bullet-flex-direction: column;
+                --bullet-background-active: var(--ds-color-ui-surface);
+                --bullet-align-items: flex-start;
+                --icon-color: var(--ds-color-action);
+                --icon-color-active: var(--ds-color-action-pressed);
+                --label-color: var(--ds-color-text-normal);
+                --icon-background:transparent;                
+            }
 
-  // Controla a exibição do painel
-  if (panel.style.display === "block") {
-    panel.style.display = "none";
-  } else {
-    panel.style.display = "block";
-  }
+            .accordion {
+                background-color: #eee;
+                color: #444;
+                cursor: pointer;
+                padding: 18px;
+                width: 100%;
+                border: none;
+                text-align: left;
+                outline: none;
+                font-size: 15px;
+                transition: background-color 0.4s;
+            }
+              
+            .active, .accordion:hover {
+                background-color: #ccc;
+            }
+              
+            .accordion:after {
+                content: '+';
+                color: #777;
+                font-weight: bold;
+                float: right;
+                margin-left: 5px;
+            }
+              
+            .active:after {
+                content: "-";
+            }
+              
+            .panel {
+                padding: 0 18px;
+                background-color: white;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.2s ease-out;
+            }
 
-  // Cria e dispara o evento personalizado
-  var customEvent = new CustomEvent("accordionToggle", {
-    detail: {
-      element: this,
-      panel: panel,
-      isActive: this.classList.contains("active"),
-    },
-  });
-  this.dispatchEvent(customEvent);
-});
+            .panel.open {
+                max-height: 500px; /* Ajuste conforme necessário */
+            }
+        `;
+    }
 
-// Escuta o evento personalizado para executar lógica adicional
-acc.addEventListener("accordionToggle", function (e) {
-  console.log("Acordeão alterado:", e.detail);
-  // Insira aqui a lógica adicional (ex.: animações ou integrações).
-});
+    /**
+     * Renderiza o conteúdo do componente.
+     */
+    render() {
+        return /*html*/`
+            <div class="container">
+                <button class="accordion">${this.titulo}</button>
+                <div class="panel">
+                    <p>${this.texto}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Lógica de inicialização e configuração de eventos.
+     */
+    connectedCallback() {
+        super.connectedCallback();
+        const button = this.shadowRoot.querySelector('.accordion');
+        const panel = this.shadowRoot.querySelector('.panel');
+
+        // Configura o evento de clique no botão
+        button.addEventListener('click', () => {
+            button.classList.toggle('active');
+
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+            } else {
+                panel.classList.add('open');
+            }
+
+            // Dispara um evento personalizado
+            const event = new CustomEvent('accordionToggle', {
+                detail: {
+                    element: this,
+                    panel: panel,
+                    isActive: button.classList.contains('active'),
+                },
+            });
+            this.dispatchEvent(event);
+        });
+    }
+}
