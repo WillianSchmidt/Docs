@@ -1,1 +1,306 @@
-a
+import Component from './Bmoscpha_Component.js';
+import DisableableMixin from './Bmoscpha_DisableableMixin.js';
+import { PropString, PropBoolean } from './Bmoscpha_Prop.js';
+import './Bmoscpha_Icon.js';
+import './Bmoscpha_Checkbox.js';
+
+const tipo = '';
+
+/**
+ * Define o componente Accordions, container contendo um grid de vários componentes Accordion.
+ */
+export default class Accordions extends Component {
+    /**
+     * Define o nome da tag do componente Bullets: `<ds-accordions>`.
+     */
+    static get componentName() {
+        return 'accordions';
+    }
+
+    /**
+     * Define as propriedades do componente.
+     */
+    static get props() {
+        return [
+            ...super.props, // herda do método estático da superclasse
+            new PropString('type'),
+        ];
+    }
+
+    /**
+     * Construtor do componente.
+     */
+    constructor() {
+        super();
+        this.addEventListener('change', (e) => {
+
+            this.render();
+        });
+    }
+
+    /**
+     * Define os estilos CSS do componente Accordions.
+     */
+    static get styles() {
+        return /*css*/`
+            :host ::slotted(ds-accordion) {
+                min-width: 93px;
+                width: calc((100% - (var(--ds-spacing-04) * 3)) / 3);
+            }
+
+            :host([type]) ::slotted(ds-accordion) {
+                --icon-background: var(--ds-color-ui-surface);
+            }
+
+            #containerAccordion {
+                border:0;
+                box-shadow:0;
+                outline:0;
+            }
+
+            :host([type="disabled"]){
+                background-color: var(--ds-color-disabled-02);
+                border-color: var(--ds-color-disabled-02);
+                color: var(--ds-color-disabled-01);
+            }
+
+        `;
+    }
+
+    /**
+     * Método sobrescrito da classe Component que renderiza o componente no DOM.
+     */
+    render() {
+        return /*html*/`
+        <fieldset id="containerAccordion">
+                <legend class="legendAccordion"></legend>
+                <slot></slot>
+            </fieldset>
+        `;
+    }
+}
+
+Component.register(Accordions);
+
+/**
+ * Classe que define o componente Accordion.
+*/
+export class Accordion extends DisableableMixin(Component) {
+    /**
+     * Define o nome da tag do componente Accordion: `<ds-accordion>`.
+     */
+    static get componentName() {
+        return 'accordion';
+    }
+
+    /**
+     * Define as propriedades do componente. Accordion por unidade.
+     */
+    static get props() {
+        return [
+            ...super.props,
+            new PropString('icon'),
+            new PropString('titulo'),
+            new PropString('texto'),
+        ];
+    }
+    
+    constructor(){
+        super();
+    }
+
+    /**
+     * Define os estilos CSS do componente único Accordion.
+     */
+    static get styles() {
+        
+        return /*css*/`
+            :host {
+                --bullet-background: transparent;
+                --bullet-flex-direction: column;
+                --bullet-background-active: var(--ds-color-ui-surface);
+                --bullet-align-items: flex-start;
+                --icon-color: var(--ds-color-action);
+                --icon-color-active: var(--ds-color-action-pressed);
+                --label-color: var(--ds-color-text-normal);
+                --icon-background:transparent;                
+            }
+
+            .checkbox{
+                background-color: #eee;
+                color: #444;
+                width: 100%;
+                text-align: left;
+                font-size: 15px;
+                transition: background-color 0.4s;
+                cursor:pointer;
+            }
+
+            .panel {
+                background-color: white;
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.4s ease-out;
+            }
+
+            .panel.open {
+                max-height: 500px; /* Ajuste conforme necessário */
+            }
+
+            ds-icon{
+                color: var(--ds-color-action);
+                align-items:center;
+                background: transparent;
+                padding-top: var(--ds-spacing-05);
+                padding-bottom: var(--ds-spacing-05);
+                padding-left: var(--ds-spacing-05);
+                padding-right: var(--ds-spacing-04);
+                width:var(--ds-spacing-05);
+                height:var(--ds-spacing-05);
+            }
+
+            .icon{
+                transform: rotate(-90deg);
+            }
+
+            .content {
+                background-color: #eee;
+                display:flex;
+                flex-direction:row;
+                width: 100%;
+                align-items:center;
+                cursor: pointer; 
+            }
+
+            button{
+                border:0;
+                background-color: #eee;
+                outline:0;
+            }
+
+            .subContent{
+                padding-bottom: 0.45rem;
+            }
+        `;
+    }
+
+    _getIconStateName(){
+        const contentButton = this.shadowRoot.querySelector('.contentButton');
+        var nameIcone = '';
+
+        if(this.parent.type == "radio"){
+            if (contentButton.classList.contains('checked')) {
+                contentButton.classList.remove('checked');
+                nameIcone = 'radio_button_unchecked';
+            }else{
+                contentButton.classList.add('checked');
+                nameIcone = 'radio_button_checked';
+            }
+        }else if(this.type == "checkbox"){
+            if (contentButton.classList.contains('checked')) {
+                contentButton.classList.remove('checked');
+                nameIcone = 'check_box_outline_blank';
+            }else{
+                contentButton.classList.add('checked');
+                nameIcone = 'check_box';
+            }
+        }
+        return nameIcone;
+    }
+
+    /**
+     * Renderiza o conteúdo do componente.
+     */
+    render() {
+        var tipoBotao = "";
+
+        const dsAccordions = this.parentElement;
+        if(dsAccordions.tagName === 'DS-ACCORDIONS'){
+            this.type = dsAccordions.getAttribute('type');
+        }
+        
+        if (this.type == 'checkbox'){
+            const icon = `<ds-icon class="selectionIcon" name="check_box_outline_blank" aria-hidden="false"></ds-icon>`;
+            tipoBotao =  '<button role="checkbox">'+
+            icon +  ' </button> ';
+        }else if(this.type == "radio"){
+            const icon = `<ds-icon class="selectionIcon" name="radio_button_unchecked" aria-hidden="false"></ds-icon>`;
+            tipoBotao =  '<button role="checkbox">'+
+            icon +  ' </button> ';
+        }else if (this.type == "icon"){
+            tipoBotao = '<ds-icon name="'+ this.icon +'" aria-hidden="true"></ds-icon>';
+        }
+        else {
+
+        }
+
+        return /*html*/`
+                <div class="container">
+                    <div class="content">
+                        <div class="contentButton">
+                            ${tipoBotao}
+                        </div>    
+                        <div class="subContent">
+                            <span>${this.titulo}</span>
+                            <ds-icon class="icon" name="chevron_right" aria-hidden="true"></ds-icon>   
+                        </div>    
+                    </div> 
+                    <div class="panel">
+                        <p>${this.texto}</p>
+                    </div>
+                </div>
+        `;
+    }  
+
+    connectedCallback() {
+        super.connectedCallback();       
+        const subContent = this.shadowRoot.querySelector('.subContent');
+        const panel = this.shadowRoot.querySelector('.panel');
+        const iconFinal = this.shadowRoot.querySelector('.icon');
+        const contentButton = this.shadowRoot.querySelector('.contentButton');
+                
+        contentButton.addEventListener('click', () => {
+            if(this.type !== "icon"){
+                this.shadowRoot.querySelector('ds-icon').setAttribute('name', 
+                    this._getIconStateName()
+                );
+            }
+                       
+            // Dispara um evento personalizado
+            const eventButton = new CustomEvent('buttonToggle', {
+                detail: {
+                    element: this,
+                    contentButton: contentButton,
+                },
+            });
+            this.dispatchEvent(eventButton);
+        });
+
+        // Configura o evento de clique subContent
+        subContent.addEventListener('click', () => {
+            subContent.classList.toggle('active');
+
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                iconFinal.style.transform = 'rotate(-90deg)'
+                iconFinal.style.transition = 'transform 0.4 ease'
+            } else {
+                panel.classList.add('open');
+                iconFinal.style.transform = 'rotate(90deg)'
+                iconFinal.style.transition = 'transform 0.4 ease'
+            }
+
+            // Dispara um evento personalizado
+            const event = new CustomEvent('panelToggle', {
+                detail: {
+                    element: this,
+                    panel: panel,
+                },
+            });
+            this.dispatchEvent(event);
+        });
+    }
+}
+
+// registra o componente para ser usado no HTML
+Component.register(Accordion);
