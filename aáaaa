@@ -1,43 +1,108 @@
-Aqui estão algumas opções de implementação:
+Aqui está um exemplo completo de um Web Component com Shadow DOM:
 
-Opção 1: Utilizando Array e some()
+ds-accordions.js
 ```
-const valores = [valor1, valor2, valor3, ...]; // substitua pelos seus boleanos
+class DsAccordions extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.desabilitado = this.getAttribute('desabilitado') === 'true';
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .accordion {
+          display: flex;
+          flex-direction: column;
+          border: 1px solid #ddd;
+          padding: 10px;
+          cursor: pointer;
+        }
+        .accordion[aberto] {
+          background-color: #f0f0f0;
+        }
+        .accordion[desabilitado] {
+          opacity: 0.5;
+          pointer-events: none;
+        }
+        .icone {
+          margin-right: 10px;
+        }
+      </style>
+      <slot></slot>
+    `;
+  }
 
-if (valores.filter(Boolean).length > 1) {
-  tipo = 'default';
-} else {
-  tipo = 'checkbox'; // ou outro tipo
-}
-```
-
-Opção 2: Utilizando Loop For
-```
-let contarVerdadeiros = 0;
-const valores = [valor1, valor2, valor3, ...]; // substitua pelos seus boleanos
-
-for (let i = 0; i < valores.length; i++) {
-  if (valores[i]) {
-    contarVerdadeiros++;
-    if (contarVerdadeiros > 1) {
-      tipo = 'default';
-      break;
-    }
+  connectedCallback() {
+    this.accordions = this.shadowRoot.querySelectorAll('ds-accordion');
+    this.accordions.forEach((accordion) => {
+      accordion.addEventListener('click', () => {
+        if (!this.desabilitado) {
+          accordion.toggleAttribute('aberto');
+        }
+      });
+    });
   }
 }
+
+customElements.define('ds-accordions', DsAccordions);
 ```
 
-Opção 3: Utilizando Operadores Lógicos
+ds-accordion.js
 ```
-const valor1 = true/false;
-const valor2 = true/false;
-const valor3 = true/false;
-
-if ((valor1 && valor2) || (valor1 && valor3) || (valor2 && valor3)) {
-  tipo = 'default';
-} else {
-  tipo = 'checkbox'; // ou outro tipo
+class DsAccordion extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.icone = this.getAttribute('icone');
+    this.titulo = this.getAttribute('titulo');
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: flex;
+          align-items: center;
+        }
+        .icone {
+          margin-right: 10px;
+        }
+        .titulo {
+          font-weight: bold;
+        }
+        .conteudo {
+          display: none;
+        }
+        :host[aberto] .conteudo {
+          display: block;
+        }
+      </style>
+      <i class="icone fa fa-${this.icone}"></i>
+      <span class="titulo">${this.titulo}</span>
+      <div class="conteudo">
+        <slot></slot>
+      </div>
+    `;
+  }
 }
+
+customElements.define('ds-accordion', DsAccordion);
 ```
 
-Escolha a opção que melhor se adequa ao seu projeto!
+Uso
+```
+<ds-accordions desabilitado="false">
+  <ds-accordion icone="email" titulo="Accordion 1">
+    Conteúdo do Accordion 1
+  </ds-accordion>
+  <ds-accordion icone="checkbox" titulo="Accordion 2">
+    Conteúdo do Accordion 2
+  </ds-accordion>
+  <ds-accordion icone="radio" titulo="Accordion 3">
+    Conteúdo do Accordion 3
+  </ds-accordion>
+</ds-accordions>
+```
+
+Lembre-se de incluir a biblioteca Font Awesome para utilizar os ícones.
