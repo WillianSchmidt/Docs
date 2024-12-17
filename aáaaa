@@ -1,108 +1,146 @@
-Aqui está um exemplo completo de um Web Component com Shadow DOM:
+import Component from './Bmoscpha_Component.js';
+import DisableableMixin from './Bmoscpha_DisableableMixin.js';
+import { PropString } from './Bmoscpha_Prop.js';
 
-ds-accordions.js
-```
-class DsAccordions extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this.desabilitado = this.getAttribute('desabilitado') === 'true';
-    this.shadowRoot.innerHTML = `
-      <style>
-        :host {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-        .accordion {
-          display: flex;
-          flex-direction: column;
-          border: 1px solid #ddd;
-          padding: 10px;
-          cursor: pointer;
-        }
-        .accordion[aberto] {
-          background-color: #f0f0f0;
-        }
-        .accordion[desabilitado] {
-          opacity: 0.5;
-          pointer-events: none;
-        }
-        .icone {
-          margin-right: 10px;
-        }
-      </style>
-      <slot></slot>
-    `;
-  }
+/**
+ * Define o componente container Accordions.
+ */
+export default class Accordions extends Component {
+    static get componentName() {
+        return 'accordions';
+    }
 
-  connectedCallback() {
-    this.accordions = this.shadowRoot.querySelectorAll('ds-accordion');
-    this.accordions.forEach((accordion) => {
-      accordion.addEventListener('click', () => {
-        if (!this.desabilitado) {
-          accordion.toggleAttribute('aberto');
-        }
-      });
-    });
-  }
+    static get props() {
+        return [
+            ...super.props,
+            new PropString('type'), // Define o comportamento do accordion: 'radio' ou 'checkbox'
+        ];
+    }
+
+    static get styles() {
+        return /*css*/`
+            :host {
+                display: block;
+                width: 100%;
+            }
+            :host ::slotted(ds-accordion) {
+                margin-bottom: 0.5rem;
+            }
+        `;
+    }
+
+    render() {
+        return /*html*/`
+            <fieldset>
+                <legend>Accordion Container</legend>
+                <slot></slot>
+            </fieldset>
+        `;
+    }
 }
 
-customElements.define('ds-accordions', DsAccordions);
-```
+Component.register(Accordions);
 
-ds-accordion.js
-```
-class DsAccordion extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this.icone = this.getAttribute('icone');
-    this.titulo = this.getAttribute('titulo');
-    this.shadowRoot.innerHTML = `
-      <style>
-        :host {
-          display: flex;
-          align-items: center;
-        }
-        .icone {
-          margin-right: 10px;
-        }
-        .titulo {
-          font-weight: bold;
-        }
-        .conteudo {
-          display: none;
-        }
-        :host[aberto] .conteudo {
-          display: block;
-        }
-      </style>
-      <i class="icone fa fa-${this.icone}"></i>
-      <span class="titulo">${this.titulo}</span>
-      <div class="conteudo">
-        <slot></slot>
-      </div>
-    `;
-  }
+/**
+ * Define o componente Accordion.
+ */
+export class Accordion extends DisableableMixin(Component) {
+    static get componentName() {
+        return 'accordion';
+    }
+
+    static get props() {
+        return [
+            ...super.props,
+            new PropString('titulo'),
+            new PropString('texto'),
+            new PropString('icon'),
+        ];
+    }
+
+    static get styles() {
+        return /*css*/`
+            :host {
+                display: block;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                overflow: hidden;
+                transition: box-shadow 0.3s;
+            }
+
+            .header {
+                display: flex;
+                align-items: center;
+                padding: 10px;
+                cursor: pointer;
+                background: #f5f5f5;
+                transition: background 0.3s;
+            }
+
+            .header:hover {
+                background: #e0e0e0;
+            }
+
+            .content {
+                max-height: 0;
+                overflow: hidden;
+                padding: 0 10px;
+                background: #fafafa;
+                transition: max-height 0.3s ease-out, padding 0.3s;
+            }
+
+            .content.open {
+                max-height: 200px; /* Ajustar conforme o conteúdo */
+                padding: 10px;
+            }
+
+            ds-icon {
+                margin-right: 10px;
+                transition: transform 0.3s;
+            }
+
+            .rotate {
+                transform: rotate(90deg);
+            }
+        `;
+    }
+
+    constructor() {
+        super();
+        this.open = false; // Estado do accordion
+    }
+
+    toggleAccordion() {
+        this.open = !this.open;
+
+        const content = this.shadowRoot.querySelector('.content');
+        const icon = this.shadowRoot.querySelector('ds-icon');
+
+        content.classList.toggle('open', this.open);
+        icon.classList.toggle('rotate', this.open);
+
+        this.dispatchEvent(new CustomEvent('accordionToggle', { detail: { open: this.open } }));
+    }
+
+    render() {
+        return /*html*/`
+            <div class="header" role="button" aria-expanded="${this.open}">
+                <ds-icon name="chevron_right"></ds-icon>
+                <span>${this.titulo}</span>
+            </div>
+            <div class="content">
+                <p>${this.texto}</p>
+            </div>
+        `;
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+
+        this.shadowRoot.querySelector('.header').addEventListener('click', () => {
+            this.toggleAccordion();
+        });
+    }
 }
 
-customElements.define('ds-accordion', DsAccordion);
-```
-
-Uso
-```
-<ds-accordions desabilitado="false">
-  <ds-accordion icone="email" titulo="Accordion 1">
-    Conteúdo do Accordion 1
-  </ds-accordion>
-  <ds-accordion icone="checkbox" titulo="Accordion 2">
-    Conteúdo do Accordion 2
-  </ds-accordion>
-  <ds-accordion icone="radio" titulo="Accordion 3">
-    Conteúdo do Accordion 3
-  </ds-accordion>
-</ds-accordions>
-```
-
-Lembre-se de incluir a biblioteca Font Awesome para utilizar os ícones.
+Component.register(Accordion);
